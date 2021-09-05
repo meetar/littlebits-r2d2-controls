@@ -86,7 +86,8 @@ function connect() {
     // stop motor
     writeToChar("140202897BCC");
   })
-  document.getElementById('output').innerHTML = response;
+  document.getElementById('output').innerHTML = JSON.stringify(Date.now());
+  // document.getElementById('output').innerHTML = JSON.stringify(response);
 }
 
 async function writeToChar(value) {
@@ -472,8 +473,8 @@ class JoystickController
 
 		stick.addEventListener('mousedown', handleDown);
 		stick.addEventListener('touchstart', handleDown);
-		document.addEventListener('mousemove', handleMoveThrottled, {passive: false});
-		document.addEventListener('touchmove', handleMoveThrottled, {passive: false});
+		document.addEventListener('mousemove', handleMoveThrottled, {passive: true});
+		document.addEventListener('touchmove', handleMoveThrottled, {passive: true});
 		document.addEventListener('mouseup', handleUp);
 		document.addEventListener('touchend', handleUp);
 	}
@@ -623,6 +624,10 @@ function throttle(func, timeFrame) {
       if (now - lastTime >= timeFrame) {
           func();
           lastTime = now;
+          document.getElementById('output').innerHTML = JSON.stringify(Date.now());
+      } else {
+        return false
+        document.getElementById('output').innerHTML = "no";
       }
   };
 }
