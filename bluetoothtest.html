@@ -1,0 +1,203 @@
+<script>
+
+
+(async () => {
+  try {
+    const isBluetoothAvailable = await navigator.bluetooth.getAvailability();
+    console.log(`> Bluetooth is ${isBluetoothAvailable ? 'available' : 'unavailable'}`);
+  } catch(error) {
+    console.log('Argh! ' + error);
+  }
+})();
+
+if ('onavailabilitychanged' in navigator.bluetooth) {
+  navigator.bluetooth.addEventListener('availabilitychanged', function(event) {
+    console.log(`> Bluetooth is ${event.value ? 'available' : 'unavailable'}`);
+  });
+}
+
+
+
+function doit() {
+  console.log('Requesting any Bluetooth Device...');
+  navigator.bluetooth.requestDevice({
+   // filters: [...] <- Prefer filters to save energy & show relevant devices.
+      acceptAllDevices: true,
+      optionalServices: ['d9d9e9e0-aa4e-4797-8151-cb41cedaf2ad']})
+  .then(device => {
+      console.log('device:', device)
+    console.log('Connecting to GATT Server...');
+    return device.gatt.connect();
+  })
+  .then(server => {
+    console.log('server:', server)
+    console.log('Getting Device Information Service...');
+    return server.getPrimaryService('d9d9e9e0-aa4e-4797-8151-cb41cedaf2ad');
+    // return server.getPrimaryServices();
+  })
+  .then(async service => {
+    console.log('Getting Characteristics...');
+    console.log('service:', service)
+    // for (const service of services) {
+    //   console.log('> Service: ' + service.uuid);
+    const characteristic = await service.getCharacteristic("d9d9e9e1-aa4e-4797-8151-cb41cedaf2ad");
+    // const characteristics = await service.getCharacteristics();
+    // // const characteristics = service.getCharacteristics();
+    // console.log('characteristics:' + characteristics);
+
+    //   mycharacteristic = null;
+    //   characteristics.forEach(characteristic => {
+    //     console.log('>> Characteristic: ' + characteristic.uuid + ' ' +
+    //         getSupportedProperties(characteristic));
+    //         console.log('characteristic.uuid:', characteristic.uuid)
+    //     if (characteristic.uuid == "d9d9e9e1-aa4e-4797-8151-cb41cedaf2ad") {
+    //       console.log('yep!')
+    //       mycharacteristic = characteristic;
+    //     }
+    //   });
+    return characteristic;
+    // }
+    // return service.getCharacteristics();
+  })
+  .then(async characteristic => {
+    console.log('characteristic:', characteristic)
+
+    console.log('Getting Descriptor...');
+    // myDescriptor = await characteristic.getDescriptor('gatt.characteristic_user_description');
+    myDescriptor = await characteristic.getDescriptor('00002901-0000-1000-8000-00805f9b34fb');
+    // myDescriptor = await characteristic.getDescriptor('Bitsnap Control');
+    console.log('Descriptor:', myDescriptor)
+
+    // let encoder = new TextEncoder('utf-8');
+    let value = "1E0115A364" // beep
+    try {
+      console.log('Setting Characteristic User Description...');
+      // await myDescriptor.writeValue(encoder.encode(value));
+      // value = hexDecode(value)
+      console.log('initial value:', value)
+      value = hexToBytes(value)
+      console.log('bytes:', value)
+      // newArray = new Uint8Array
+      value = new Uint8Array(value).buffer
+      // value = value.buffer
+      // debugger
+      console.log('writing', value)
+      
+      // await myDescriptor.writeValue(value);
+      // await myDescriptor.writeValueWithResponse(value).then(res => {
+      await characteristic.writeValueWithResponse(value).then(res => {
+        console.log('response:', res)
+      })
+
+      // console.log('> Characteristic User Description changed to: ' + value);
+    } catch(error) {
+      console.log('Argh! ' + error);
+    }
+
+
+  })
+//   .catch(error => {
+//     console.log('Argh! ' + trace(error));
+//   });
+}
+
+/* Utils */
+
+function padHex(value) {
+  return ('00' + value.toString(16).toUpperCase()).slice(-2);
+}
+
+function getSupportedProperties(characteristic) {
+  let supportedProperties = [];
+  for (const p in characteristic.properties) {
+    if (characteristic.properties[p] === true) {
+      supportedProperties.push(p.toUpperCase());
+    }
+  }
+  return '[' + supportedProperties.join(', ') + ']';
+}
+
+
+
+function onGetBluetoothDevicesButtonClick() {
+  console.log('Getting existing permitted Bluetooth devices...');
+  navigator.bluetooth.getDevices()
+  .then(devices => {
+    console.log('> Got ' + devices.length + ' Bluetooth devices.');
+    for (const device of devices) {
+      console.log('  > ' + device.name + ' (' + device.id + ')');
+    }
+  })
+  .catch(error => {
+    console.log('Argh! ' + error);
+  });
+}
+
+function onRequestBluetoothDeviceButtonClick() {
+  console.log('Requesting any Bluetooth device...');
+  navigator.bluetooth.requestDevice({
+ // filters: [...] <- Prefer filters to save energy & show relevant devices.
+    acceptAllDevices: true
+  })
+  .then(device => {
+    console.log('> Requested ' + device.name + ' (' + device.id + ')');
+  })
+  .catch(error => {
+    console.log('Argh! ' + error);
+  });
+}
+
+
+
+function hexEncode(input) {
+    var hex, i;
+
+    var result = "";
+    for (i=0; i<input.length; i++) {
+        hex = input.charCodeAt(i).toString(16);
+        result += ("0"+hex).slice(-4);
+    }
+
+    return result
+}
+
+function hexDecode(input) {
+    var j;
+    var hexes = input.match(/.{1,2}/g) || [];
+    var back = new Uint8Array(hexes.length/2);
+    console.log('new bytearray length', back.length)
+    // debugger
+    for(j = 0; j<hexes.length; j++) {
+        back[j] = parseInt(hexes[j], 16);
+        // back[j] = "\\u"+hexes[j];
+        console.log(hexes[j], back[j])
+    }
+
+    return back;
+}
+
+// Convert a hex string to a byte array
+function hexToBytes(hex) {
+    for (var bytes = [], c = 0; c < hex.length; c += 2)
+    bytes.push(parseInt(hex.substr(c, 2), 16));
+    return bytes;
+}
+
+// Convert a byte array to a hex string
+function bytesToHex(bytes) {
+    for (var hex = [], i = 0; i < bytes.length; i++) {
+        var current = bytes[i] < 0 ? bytes[i] + 256 : bytes[i];
+        hex.push((current >>> 4).toString(16));
+        hex.push((current & 0xF).toString(16));
+    }
+    return hex.join("");
+}
+
+</script>
+
+
+
+
+<button onclick="onGetBluetoothDevicesButtonClick()">get devices</button>
+<button onclick="onRequestBluetoothDeviceButtonClick()">request device</button>
+<button onclick="doit()">do it</button>

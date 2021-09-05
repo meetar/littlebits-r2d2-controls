@@ -1,0 +1,69 @@
+w32
+Services:
+d9d9e9e0-aa4e-4797-8151-cb41cedaf2ad (Handle: 9): Unknown
+value: bytearray(b'\x00\x00')
+[Service] d9d9e9e0-aa4e-4797-8151-cb41cedaf2ad: Unknown
+	[Characteristic] d9d9e9e1-aa4e-4797-8151-cb41cedaf2ad: (Handle: 10) (write-without-response,write,notify) | Name: Unknown, Value: None
+		[Descriptor] 00002901-0000-1000-8000-00805f9b34fb: (Handle: 12) | Value: b'Bitsnap Control'
+		[Descriptor] 00002902-0000-1000-8000-00805f9b34fb: (Handle: 13) | Value: b'\x00\x00'
+	[Characteristic] d9d9e9e2-aa4e-4797-8151-cb41cedaf2ad: (Handle: 14) (read,write) | Name: Unknown, Value: b'170502a'
+		[Descriptor] 00002901-0000-1000-8000-00805f9b34fb: (Handle: 16) | Value: b'FW Version'
+	[Characteristic] d9d9e9e3-aa4e-4797-8151-cb41cedaf2ad: (Handle: 17) (read,write-without-response,write,notify,indicate) | Name: Unknown, Value: b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+		[Descriptor] 00002901-0000-1000-8000-00805f9b34fb: (Handle: 19) | Value: b'Audio Upload'
+		[Descriptor] 00002902-0000-1000-8000-00805f9b34fb: (Handle: 20) | Value: b'\x00\x00'
+
+
+
+
+
+
+W33
+
+
+
+
+
+128866783263 1e010f101f
+02, 02, 01, 03, 1e, 5d
+128866783264 1e010f1020
+02, 02, 00, 00, 1d, 0f
+02, 02, 01, 03, 1e, 5d
+128866783265 1e010f1021
+128866783266 1e010f1022
+
+
+
+128866783261 1e010f101d
+02, 02
+01, 03, 1e, 5d
+128866783262 1e010f101e
+02, 02, 01, 03, 1e, 5d
+128866783263 1e010f101f
+02, 02, 01, 03, 1e, 5d
+128866783264 1e010f1020
+02, 02, 00, 00, 1d, 0f
+128866783265 1e010f1021
+
+
+128865853934 1e0100e1ee
+02, 02, 01, 03, 1e, 5d
+128865853935 1e0100e1ef
+02, 02, 01, 03, 1e, 5d
+128865853936 1e0100e1f0
+02, 02, 01, 03, 1e, 5d
+128865853937 1e0100e1f1
+02, 02, 00, 00, 1d, 0f
+
+
+128865923535 1e0101f1cf
+02, 02, 01, 03, 1e, 5d
+128865923536 1e0101f1d0
+02, 02, 01, 03, 1e, 5d
+128865923537 1e0101f1d1
+02, 02, 01, 03, 1e, 5d
+128865923538 1e0101f1d2
+02, 02, 00, 00, 1d, 0f
+
+
+for x in range(128865731118, 128865976754):
+got all the way to 128865927245 on our way up

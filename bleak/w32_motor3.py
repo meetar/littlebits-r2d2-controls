@@ -1,0 +1,461 @@
+import asyncio
+import logging
+import uuid
+
+from bleak import discover, BleakClient, BleakScanner, BleakError
+
+from binascii import hexlify
+
+devices_dict = {}
+devices_list = []
+receive_data = []
+
+device = None
+
+#To discover BLE devices nearby 
+async def scan():
+    dev = await discover()
+    for i in range(0,len(dev)):
+        #Print the devices discovered
+        print("[" + str(i) + "]",'',dev[i].address,'',dev[i].name,'',dev[i].metadata["uuids"])
+        #Put devices information into list
+        devices_dict[dev[i].address] = []
+        devices_dict[dev[i].address].append(dev[i].name)
+        devices_dict[dev[i].address].append(dev[i].metadata["uuids"])
+        devices_list.append(dev[i].address)
+        if dev[i].name == "w32 ControlHub":
+            print("found hub:", dev[i])
+            global device
+            print("setting device to", dev[i].address)
+            device = dev[i].address
+    print('device:', device)
+    if device == None:
+        print('device not found')
+
+#An easy notify function, just print the recieve data
+def notification_handler(sender, data):
+    print(', '.join('{:02x}'.format(x) for x in data))
+
+def handle_disconnect(_: BleakClient):
+        print("Device was disconnected, goodbye.")
+        # cancelling all tasks effectively ends the program
+        for task in asyncio.all_tasks():
+            task.cancel()
+
+async def run(address, debug=False):
+    log = logging.getLogger(__name__)
+    if debug:
+        import sys
+
+        log.setLevel(logging.DEBUG)
+        h = logging.StreamHandler(sys.stdout)
+        h.setLevel(logging.DEBUG)
+        log.addHandler(h)
+    
+    # address = "44D5602F-186F-4228-B934-D91B61574A78"
+    global device
+    device = await BleakScanner.find_device_by_address(address, timeout=20.0)
+    if not device:
+        raise BleakError(f"A device with address {address} could not be found.")
+
+    async with BleakClient(address, disconnected_callback=handle_disconnect) as client:
+    # async with device as client:
+        x = client.is_connected
+        log.info("Connected: {0}".format(x))
+
+
+        #Characteristic uuid
+        rw_charac = "d9d9e9e1-aa4e-4797-8151-cb41cedaf2ad" # w32
+        # rw_charac = "f8e49401-16f2-457e-8426-0fbce4eac6dc" # w33
+
+        await client.start_notify(rw_charac, notification_handler)
+        loop = asyncio.get_event_loop()
+
+        addresses=  ["140202FF659D",
+"140202FE75BC",
+"140202FD45DF",
+"140202FC55FE",
+"140202FB2519",
+"140202FA3538",
+"140202F9055B",
+"140202F8157A",
+"140202F7E495",
+"140202F6F4B4",
+"140202F5C4D7",
+"140202F4D4F6",
+"140202F3A411",
+"140202F2B430",
+"140202F18453",
+"140202F09472",
+"140202EF77AC",
+"140202ED57EE",
+"140202EC47CF",
+"140202EB3728",
+"140202EA2709",
+"140202E9176A",
+"140202E8074B",
+"140202E7F6A4",
+"140202E6E685",
+"140202E5D6E6",
+"140202E4C6C7",
+"140202E3B620",
+"140202E19662",
+"140202E08643",
+"140202DF41FF",
+"140202DE51DE",
+"140202DD61BD",
+"140202DA115A",
+"140202D92139",
+"140202D6D0D6",
+"140202D5E0B5",
+"140202D4F094",
+"140202D38073",
+"140202D29052",
+"140202D1A031",
+"140202D0B010",
+"140202CE43EF",
+"140202CD738C",
+"140202CC63AD",
+"140202CA036B",
+"140202C93308",
+"140202C82329",
+"140202C7D2C6",
+"140202C5F284",
+"140202C4E2A5",
+"140202C39242",
+"140202C28263",
+"140202C1B200",
+"140202BF2D59",
+"140202BE3D78",
+"140202BD0D1B",
+"140202BC1D3A",
+"140202BA7DFC",
+"140202B85DBE",
+"140202B6BC70",
+"140202B49C32",
+"140202B3ECD5",
+"140202B2FCF4",
+"140202B0DCB6",
+"140202AF3F68",
+"140202AB7FEC",
+"140202AA6FCD",
+"140202A6AE41",
+"140202A59E22",
+"140202A48E03",
+"140202A2EEC5",
+"140202A1DEA6",
+"140202A0CE87",
+"1402029F093B",
+"1402029E191A",
+"1402029D2979",
+"1402029B49BF",
+"1402029969FD",
+"1402029879DC",
+"140202978833",
+"140202969812",
+"14020294B850",
+"14020293C8B7",
+"14020292D896",
+"14020291E8F5",
+"1402028D3B48",
+"1402028C2B69",
+"1402028B5B8E",
+"1402028A4BAF",
+"140202897BCC",
+"140202886BED",
+"140202879A02",
+"140202868A23",
+"14020285BA40",
+"14020283DA86",
+"1402027EE434",
+"1402027DD457",
+"1402027CC476",
+"1402027BB491",
+"1402027994D3",
+"14020276653C",
+"14020274457E",
+"1402027225B8",
+"1402026FE624",
+"1402026EF605",
+"1402026DC666",
+"1402026CD647",
+"1402026BA6A0",
+"1402026896C3",
+"14020267672C",
+"14020266770D",
+"1402026327A8",
+"140202623789",
+"1402026107EA",
+"1402026017CB",
+"1402025EC056",
+"1402025CE014",
+"1402025B90F3",
+"1402025A80D2",
+"14020259B0B1",
+"14020257517F",
+"14020256415E",
+"14020255713D",
+"14020254611C",
+"1402025311FB",
+"140202502198",
+"1402024ED267",
+"1402024B82C2",
+"14020249A280",
+"14020247434E",
+"14020246536F",
+"14020245630C",
+"14020244732D",
+"1402024303CA",
+"140202412388",
+"1402024033A9",
+"1402023BFC55",
+"1402023AEC74",
+"14020239DC17",
+"14020238CC36",
+"140202362DF8",
+"140202337D5D",
+"140202326D7C",
+"140202304D3E",
+"1402022FAEE0",
+"1402022EBEC1",
+"1402022BEE64",
+"14020229CE26",
+"140202272FE8",
+"140202263FC9",
+"140202214F2E",
+"140202205F0F",
+"1402021F98B3",
+"1402021E8892",
+"1402021DB8F1",
+"1402021BD837",
+"1402021AC816",
+"14020219F875",
+"14020218E854",
+"1402021719BB",
+"1402021539F9",
+"1402021429D8",
+"14020213593F",
+"14020212491E",
+"1402020F8A82",
+"1402020E9AA3",
+"1402020DAAC0",
+"1402020CBAE1",
+"14020209EA44",
+"140202070B8A",
+"140202061BAB",
+"140202052BC8",
+"140202034B0E",
+"140202016B4C",
+"140202007B6D",
+"140200FF03FF",
+"140200FE13DE",
+"140200FD23BD",
+"140200FC339C",
+"140200FB437B",
+"140200FA535A",
+"140200F96339",
+"140200F87318",
+"140200F782F7",
+"140200F692D6",
+"140200F5A2B5",
+"140200F4B294",
+"140200F3C273",
+"140200F2D252",
+"140200F0F210",
+"140200EE01EF",
+"140200EC21AD",
+"140200EB514A",
+"140200EA416B",
+"140200E97108",
+"140200E86129",
+"140200E790C6",
+"140200E5B084",
+"140200E3D042",
+"140200E2C063",
+"140200E0E021",
+"140200DF279D",
+"140200DE37BC",
+"140200DC17FE",
+"140200DB6719",
+"140200D9475B",
+"140200D8577A",
+"140200D6B6B4",
+"140200D586D7",
+"140200D496F6",
+"140200D3E611",
+"140200D2F630",
+"140200D1C653",
+"140200CE258D",
+"140200CD15EE",
+"140200CC05CF",
+"140200CB7528",
+"140200CA6509",
+"140200C9556A",
+"140200C7B4A4",
+"140200C6A485",
+"140200C594E6",
+"140200C484C7",
+"140200C2E401",
+"140200BF4B3B",
+"140200BE5B1A",
+"140200BD6B79",
+"140200BA1B9E",
+"140200B92BFD",
+"140200B83BDC",
+"140200B7CA33",
+"140200B4FA50",
+"140200B38AB7",
+"140200B29A96",
+"140200AF590A",
+"140200AE492B",
+"140200AA09AF",
+"140200A939CC",
+"140200A829ED",
+"140200A7D802",
+"140200A4E861",
+"140200A288A7",
+"140200A1B8C4",
+"1402009E7F78",
+"1402009C5F3A",
+"140200981FBE",
+"14020096FE70",
+"14020094DE32",
+"14020093AED5",
+"140200918E97",
+"140200909EB6",
+"1402008E6D49",
+"1402008D5D2A",
+"1402008C4D0B",
+"1402008B3DEC",
+"1402008A2DCD",
+"140200891DAE",
+"14020086EC41",
+"14020083BCE4",
+"14020082ACC5",
+"140200819CA6",
+"140200808C87",
+"1402007E8256",
+"1402007DB235",
+"1402007CA214",
+"1402007AC2D2",
+"14020079F2B1",
+"14020078E290",
+"14020077137F",
+"14020076035E",
+"14020075333D",
+"1402007243DA",
+"1402007173B9",
+"1402006F8046",
+"1402006E9067",
+"1402006DA004",
+"1402006CB025",
+"1402006BC0C2",
+"1402006AD0E3",
+"14020069E080",
+"14020068F0A1",
+"14020066116F",
+"14020065210C",
+"14020064312D",
+"1402006251EB",
+"140200616188",
+"1402006071A9",
+"1402005FB615",
+"1402005BF691",
+"1402005AE6B0",
+"14020059D6D3",
+"14020058C6F2",
+"14020057371D",
+"14020056273C",
+"14020055175F",
+"14020054077E",
+"140200537799",
+"1402005267B8",
+"1402005157DB",
+"1402005047FA",
+"1402004D8466",
+"1402004C9447",
+"1402004BE4A0",
+"1402004AF481",
+"14020049C4E2",
+"14020048D4C3",
+"14020046350D",
+"1402004365A8",
+"140200427589",
+"1402004145EA",
+"1402004055CB",
+"1402003FDAB3",
+"1402003DFAF1",
+"1402003CEAD0",
+"1402003A8A16",
+"14020039BA75",
+"14020038AA54",
+"140200364B9A",
+"140200346BD8",
+"140200331B3F",
+"140200320B1E",
+"140200313B7D",
+"1402002CF8E1",
+"1402002A9827",
+"14020029A844",
+"14020027498A",
+"1402002569C8",
+"14020021294C",
+"14020020396D",
+"1402001FFED1",
+"1402001DDE93",
+"1402001CCEB2",
+"1402001BBE55",
+"1402001AAE74",
+"140200199E17",
+"140200188E36",
+"140200177FD9",
+"140200166FF8",
+"140200144FBA",
+"140200133F5D",
+"140200122F7C",
+"140200111F1F",
+"140200100F3E",
+"1402000FECE0",
+"1402000EFCC1",
+"1402000CDC83",
+"1402000BAC64",
+"140200098C26",
+"140200089C07",
+"140200076DE8",
+"140200067DC9",
+"140200054DAA",
+"140200045D8B",
+"140200032D6C",
+"140200023D4D",
+"140200010D2E",
+"140200001D0F"]
+        for x in addresses:
+            data = bytearray.fromhex(bytes(x, 'utf-8').decode('utf-8'))
+            print(data)
+            await client.write_gatt_char(rw_charac, data, response=True)
+            await asyncio.sleep(0.05)
+
+        await client.stop_notify(rw_charac)
+
+
+
+if __name__ == "__main__":
+    # print("Scanning for peripherals...")
+    # # Build an event loop
+    # loop = asyncio.get_event_loop()
+    # # Run the discover event
+    # loop.run_until_complete(scan())
+
+    # global device
+    address = "44D5602F-186F-4228-B934-D91B61574A78" # W32
+    # address = "6D46D478-28F6-4877-A7F7-B8BB008E89E2" # W33
+
+    # global device
+    # device = await BleakScanner.find_device_by_address(address, timeout=20.0)
+
+    #Run notify event
+    loop = asyncio.get_event_loop()
+    loop.set_debug(True)
+    loop.run_until_complete(run(address, True))
+    # asyncio.run(show_disconnect_handling())
+    exit()
