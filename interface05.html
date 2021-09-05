@@ -13,7 +13,7 @@
   background-color: #4CAF50; /* Green */
   border: none;
   color: white;
-  padding: 15px 32px;
+  padding: 15px 24px;
   text-align: center;
   text-decoration: none;
   display: inline-block;
@@ -28,7 +28,7 @@
 #left {
 	padding: 0;
 	margin: 0;
-	outline: 1px solid red;
+	/* outline: 1px solid red; */
 	float: left;
 	width: 50%;
 }
@@ -36,11 +36,16 @@
 #right {
 	padding: 0;
 	margin: 0;
-	outline: 1px solid red;
+	/* outline: 1px solid red; */
 	float: right;
 	width: 50%;
 }
 
+#joystick {
+	margin: 0 auto;
+	position: relative;
+	width: 256px;
+}
 </style>
 <script>
 
@@ -256,39 +261,27 @@ class JoystickController
 		    const xDiff = event.clientX - self.dragStart.x;
 		    const yDiff = event.clientY - self.dragStart.y;
 		    const angle = Math.atan2(yDiff, xDiff);
-			const distance = Math.min(maxDistance, Math.hypot(xDiff, yDiff));
-			const xPosition = distance * Math.cos(angle);
-			const yPosition = distance * Math.sin(angle);
+				const distance = Math.min(maxDistance, Math.hypot(xDiff, yDiff));
+				const xPosition = distance * Math.cos(angle);
+				const yPosition = distance * Math.sin(angle);
 
 			// move stick image to new position
 		    stick.style.transform = `translate3d(${xPosition}px, ${yPosition}px, 0px)`;
 
 			// deadzone adjustment
-			const distance2 = (distance < deadzone) ? 0 : maxDistance / (maxDistance - deadzone) * (distance - deadzone);
+				const distance2 = (distance < deadzone) ? 0 : maxDistance / (maxDistance - deadzone) * (distance - deadzone);
 		    const xPosition2 = distance2 * Math.cos(angle);
-			const yPosition2 = distance2 * Math.sin(angle);
+				const yPosition2 = distance2 * Math.sin(angle);
 		    const xPercent = parseFloat((xPosition2 / maxDistance).toFixed(4));
 		    const yPercent = parseFloat((yPosition2 / maxDistance).toFixed(4));
 		    
 		    self.value = { x: xPercent, y: yPercent };
-		    // console.log(self.value, distance, angle);
-		    // console.log(self.value);
 
-            // drive - 0 - 32
-            // 0 = 32
-            // 1 = 64
-            // -1 = 0
-            let normalized_x = 32 * (xPercent + 1)/2
-            // console.log(xPercent, normalized_x)
-            let normalized_y = 62 * (yPercent + 1)/2
-            // console.log(normalized_x, normalized_y)
-            // console.log(turnSignals[Math.floor(normalized_x)], driveControls[Math.floor(normalized_y)])
-            y = Math.floor(normalized_y);
-            x = Math.floor(normalized_x);
-            // turn(x);
-            // drive(y);
-            throttle(() => driveAndTurn());
-            
+				let normalized_x = 32 * (xPercent + 1)/2
+				let normalized_y = 62 * (yPercent + 1)/2
+				y = Math.floor(normalized_y);
+				x = Math.floor(normalized_x);
+				throttle(() => driveAndTurn());
 
 		  }
 
@@ -339,10 +332,10 @@ function driveAndTurn() {
 
     <p>
 
-      <div style="outline: 1px solid red; position: relative; width: 256px; left:10px; ">
-        <img src="images/joystick-base.png"/>
-        <div id="stick1" style="position: absolute; left:32px; top:32px;">
-        <img src="images/joystick-red.png"/>		
+      <div id="joystick">
+        <img src="images/joystick-base.png" height="256px" />
+        <div id="stick1" style="position: absolute; left:64px; top:64px;">
+        <img src="images/joystick-red.png" height="128px" />
         </div>
     </div>
     
@@ -391,7 +384,7 @@ function driveAndTurn() {
     "thbt" :	"1E01068136",
     "worried" :	"1E0104A174",
     "dubious" :	"1E0102C1B2",
-    "board startup!!" :	"1E0101F1D1",
+    "startup" :	"1E0101F1D1",
     "thinking" :	"1E0100E1F0",
   }
 makeSoundButtons()
