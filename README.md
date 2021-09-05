@@ -1,0 +1,65 @@
+README.md
+
+littlebits r2d2 bluetooth controller
+
+SO I bought the littlebits droid inventor kit for my daughter.
+HOWEVER it requires an app.
+HOWEVER: the app is no longer available.
+
+the app isn't available because littlebits was bought by sphereo and sphero pulled support for the kit and the app.
+
+HOWEVER: littlebits made another kit called the space rover inventor kit, which uses similar parts, and includes an app.
+
+HOWEVER: the space rover inventor kit app doesn't support the droid inventor hardware, and won't connect to the droid inventor kit control hub.
+
+HOWEVER: the space rover control hub is very similar to the droid inventor control hub. as far as I can tell, the only difference is the model number:
+w33 vs w32.
+
+SO: i bought the space rover inventor kit, and got the space rover inventor app.
+
+THEN: i used bluetooth sniffing to capture the control messages from the app to the control hub.
+
+THEN: i connected my computer to the droid inventor control hub with bluetooth and tried sending the same control messages, and IT WORKED! kind of.
+
+the space rover kit includes a few sounds, maybe 5? which are triggered by sending certain command sequences.
+
+each of those command sequences also triggers sounds on the r2 unit.
+
+HOWEVER: the r2 unit was advertised to include 20 sounds.
+
+SO: i started looking closely at the control sequences for triggering the space rover sounds.
+
+I noticed that they seemed to be separated by a few common intervals, numerically.
+
+SO: i started extrapolating out along the number line, looking for other numbers in the same sequence. and I found lots more!
+
+HOWEVER: there was a gap in the number sequence, and also one more important sound missing.
+
+SO: i brute forced-it, and found the sound!
+
+THEN: i captured all the control sequences for controlling the two drive motors on the spare rover, and determined that they also worked for the r2 unit.
+
+HOWEVER: there didn't seem to be any simple function that determined the control sequences, they were more-or-less arbitrary numbers in a sorted array.
+
+360 degrees of turn, and 62 different drive motor speeds.
+
+i determined that there were really only a few important values, and the others were duplicates. 32 important turn values, and 62 important drive values.
+
+THEN i put those values into an array.
+
+THEN i connected a web browser to the r2 unit control hub with bluetooth.
+THEN i made a javascript interface on a webpage, and connected sliders to the commands. this mostly worked!
+
+HOWEVER: it turns out most modern browsers don't offer the same web bluetooth support on mobile devices.
+
+HOWEVER: there are custom third-party browsers that do.
+
+SO: i made an interface that worked in these mobile browsers, mostly.
+
+HOWEVER: there were serioud performance problems, caused by overloading the control hubs.
+
+SO: i throttled the commands so the control hub wouldn't be overloaded.
+
+THEN: my daughter designed an interface, and we coded it up together.
+
+here it is!
