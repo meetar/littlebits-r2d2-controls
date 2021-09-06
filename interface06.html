@@ -1,0 +1,507 @@
+<html><head>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  
+  <style>
+		html, body {
+			margin: 0;
+			padding: 0;
+		}
+
+    button {
+  background-color: #4CAF50; /* Green */
+  border: none;
+  color: white;
+  padding: 15px 24px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+}
+
+.buttonsDiv {
+  outline: 1px solid gold;
+  height: 100px;
+}
+
+#left {
+	padding: 0;
+	margin: 0;
+	/* outline: 1px solid red; */
+	float: left;
+	width: 50%;
+}
+
+#right {
+	padding: 0;
+	margin: 0;
+	/* outline: 1px solid red; */
+	float: right;
+	width: 50%;
+}
+
+#joystick {
+	margin: 0 auto;
+	position: relative;
+	width: 256px;
+}
+</style>
+<script>
+
+var characteristic;
+function connect() {
+  let response = navigator.bluetooth.requestDevice({
+		filters: [{"name":"w32 ControlHub"}],
+		optionalServices: ['d9d9e9e0-aa4e-4797-8151-cb41cedaf2ad']})
+  .then(device => {
+		// console.log('device:', device)
+    return device.gatt.connect();
+  })
+  .then(server => {
+    // console.log('server:', server)
+    return server.getPrimaryService('d9d9e9e0-aa4e-4797-8151-cb41cedaf2ad');
+  })
+  .then(async service => {
+    // console.log('service:', service)
+    characteristic = await service.getCharacteristic("d9d9e9e1-aa4e-4797-8151-cb41cedaf2ad");
+  }).then( () => {
+		console.log('Connected!')
+    // stop motor
+    stop();
+  })
+}
+
+async function writeToChar(value) {
+  value = hexToBytes(value)
+  value = new Uint8Array(value).buffer
+	if (characteristic) {
+		characteristic.writeValue(value)
+		.catch(e => {
+			// console.log(`oops: ${JSON.stringify(e)}`)
+		});
+	}
+}
+
+async function play(sound) {
+  try {
+    writeToChar(sound)
+  } catch(error) {
+    console.log('Argh! ' + error);
+  }
+}
+
+async function drive(index) {
+  try {
+    return await writeToChar(driveValues[index]);
+  } catch(error) {
+    console.log('Argh! ' + error);
+  }
+}
+
+async function turn(index) {
+  try {
+    return await writeToChar(turnValues[index]);
+  } catch(error) {
+    console.log('Argh! ' + error);
+  }
+}
+
+async function stop() {
+  try {
+		y = 31; // stop;
+		driveAndTurn(); // stop
+  } catch(error) {
+    console.log('Argh! ' + error);
+  }
+}
+
+
+/* Utils */
+
+// Convert a hex string to a byte array
+function hexToBytes(hex) {
+    for (var bytes = [], c = 0; c < hex.length; c += 2)
+    bytes.push(parseInt(hex.substr(c, 2), 16));
+    return bytes;
+}
+
+/* Array Definitions */
+
+let driveValues = [
+"140202FF659D", // full forward
+"140202FA3538",
+"140202F6F4B4",
+"140202F2B430",
+"140202ED57EE",
+"140202EA2709",
+"140202E6E685",
+"140202E3B620",
+"140202DF41FF",
+"140202DA115A",
+"140202D6D0D6",
+"140202D29052",
+"140202CE43EF",
+"140202CA036B",
+"140202C5F284",
+"140202C28263",
+"140202BE3D78",
+"140202BA7DFC",
+"140202B6BC70",
+"140202B2FCF4",
+"140202AB7FEC",
+"140202AA6FCD",
+"140202A6AE41",
+"140202A2EEC5",
+"140202A1DEA6",
+"1402029E191A",
+"1402029969FD",
+"140202969812",
+"14020292D896",
+"1402028D3B48",
+"1402028A4BAF",
+"140202897BCC", // stop
+"1402027DD457",
+"1402027994D3",
+"14020276653C",
+"1402027225B8",
+"1402026EF605",
+"1402026DC666",
+"1402026896C3",
+"1402026327A8",
+"1402026107EA",
+"1402025CE014",
+"14020259B0B1",
+"14020255713D",
+"140202502198",
+"1402024B82C2",
+"14020249A280",
+"14020245630C",
+"140202412388",
+"1402023BFC55",
+"14020239DC17",
+"140202337D5D",
+"140202304D3E",
+"1402022BEE64",
+"14020229CE26",
+"140202214F2E",
+"140202205F0F",
+"1402021BD837",
+"14020218E854",
+"1402021429D8",
+"1402020F8A82",
+"1402020CBAE1",
+"140202070B8A"] // back
+
+
+class JoystickController
+{
+	// stickID: ID of HTML element (representing joystick) that will be dragged
+	// maxDistance: maximum amount joystick can move in any direction
+	// deadzone: joystick must move at least this amount from origin to register value change
+	constructor( stickID, maxDistance, deadzone )
+	{
+		this.id = stickID;
+		let stick = document.getElementById(stickID);
+
+		// location from which drag begins, used to calculate offsets
+		this.dragStart = null;
+
+		// track touch identifier in case multiple joysticks present
+		this.touchId = null;
+		
+		this.active = false;
+		this.value = { x: 0, y: 0 }; 
+
+		let self = this;
+
+		function handleDown(event)
+		{
+		    self.active = true;
+
+			// all drag movements are instantaneous
+			stick.style.transition = '0s';
+
+			// touch event fired before mouse event; prevent redundant mouse event from firing
+			event.preventDefault();
+
+		    if (event.changedTouches)
+		    	self.dragStart = { x: event.changedTouches[0].clientX, y: event.changedTouches[0].clientY };
+		    else
+		    	self.dragStart = { x: event.clientX, y: event.clientY };
+
+			// if this is a touch event, keep track of which one
+		    if (event.changedTouches)
+		    	self.touchId = event.changedTouches[0].identifier;
+		}
+		
+        function handleMove(event) 
+		{
+		    if ( !self.active ) return;
+				if (!characteristic) return;
+
+		    // if this is a touch event, make sure it is the right one
+		    // also handle multiple simultaneous touchmove events
+		    let touchmoveId = null;
+		    if (event.changedTouches)
+		    {
+		    	for (let i = 0; i < event.changedTouches.length; i++)
+		    	{
+		    		if (self.touchId == event.changedTouches[i].identifier)
+		    		{
+		    			touchmoveId = i;
+		    			event.clientX = event.changedTouches[i].clientX;
+		    			event.clientY = event.changedTouches[i].clientY;
+		    		}
+		    	}
+
+		    	if (touchmoveId == null) return;
+		    }
+
+		    const xDiff = event.clientX - self.dragStart.x;
+		    const yDiff = event.clientY - self.dragStart.y;
+		    // const xDiff = self.dragStart.x - event.clientX;
+		    // const yDiff = self.dragStart.y - event.clientY;
+		    const angle = Math.atan2(yDiff, xDiff);
+		    const driveangle = Math.atan2(xDiff, -yDiff);
+            const distance = Math.min(maxDistance, Math.hypot(xDiff, yDiff));
+            const xPosition = distance * Math.cos(angle);
+            const yPosition = distance * Math.sin(angle);
+
+            // console.log(distance);
+
+            // move stick image to new position
+		    stick.style.transform = `translate3d(${xPosition}px, ${yPosition}px, 0px)`;
+
+			// deadzone adjustment
+            const distance2 = (distance < deadzone) ? 0 : maxDistance / (maxDistance - deadzone) * (distance - deadzone);
+		    const xPosition2 = distance2 * Math.cos(angle);
+            const yPosition2 = distance2 * Math.sin(angle);
+		    const xPercent = parseFloat((xPosition2 / maxDistance).toFixed(4));
+		    const yPercent = parseFloat((yPosition2 / maxDistance).toFixed(4));
+		    
+		    self.value = { x: xPercent, y: yPercent };
+            // let x = xPercent;
+            // let y = yPercent;
+
+            // // straight translateion from x and y positions to turn and drive
+            // let normalized_x = 32 * (xPercent + 1)/2
+            // let normalized_y = 62 * (yPercent + 1)/2
+
+            // improved interaction using distance and angle
+            let xVal;
+            let yVal;
+            let limit = .75 * Math.PI;
+            // console.log(Math.abs(driveangle), (Math.abs(driveangle) > limit))
+            if (Math.abs(driveangle) < limit) {
+                // forward!
+                // To convert a value x from [minimum..maximum] to [floor..ceil]:
+                // normalized_x = ((ceil - floor) * (x - minimum))/(maximum - minimum) + floor
+                // https://stackoverflow.com/a/17029736/738675
+                // debugger
+                // x ceil: 30, floor:1, max: limit, min: -limit
+                xVal = ((33 - 2) * (driveangle + limit))/(2 * limit) + 2;
+                // y ceil: 0, floor: 31, max: 64, min: 0
+                yVal = ((0 - 31) * distance)/64 + 31; // from stopped to full ahead: 31-0
+            } else {
+                // y ceil: 0, floor: 31, max: 64, min: 0
+                xVal = 17 // straight ahead
+                yVal = ((62 - 31) * distance)/64 + 31; // from 0 to full reverse: 31-62
+            }
+
+            x = Math.floor(xVal);
+            y = Math.floor(yVal);
+            throttle(() => driveAndTurn());
+
+		  }
+
+		function handleUp(event) 
+		{
+		    if ( !self.active ) return;
+
+		    // if this is a touch event, make sure it is the right one
+		    if (event.changedTouches && self.touchId != event.changedTouches[0].identifier) return;
+
+		    // transition the joystick position back to center
+		    stick.style.transition = '.2s';
+		    stick.style.transform = `translate3d(0px, 0px, 0px)`;
+
+		    // reset everything
+		    self.value = { x: 0, y: 0 };
+		    self.touchId = null;
+		    self.active = false;
+				stop();
+		}
+
+		stick.addEventListener('mousedown', handleDown);
+		stick.addEventListener('touchstart', handleDown);
+		document.addEventListener('mousemove', handleMove, {passive: true});
+		document.addEventListener('touchmove', handleMove, {passive: true});
+		document.addEventListener('mouseup', handleUp);
+		document.addEventListener('touchend', handleUp);
+	}
+}
+
+function driveAndTurn() {
+	if (x) turn(x);
+	// delay this command to prevent spamming the control hub
+	setTimeout(() => drive(y), 100);
+}
+
+</script>
+</head><body>
+
+
+<div id="controls">
+<div id="left">
+
+  <button onclick="connect()">connect</button>
+
+    <button onclick="stop()">stop</button>
+
+
+    <p>
+
+      <div id="joystick">
+        <img src="images/joystick-base.png" height="256px" />
+        <div id="stick1" style="position: absolute; left:64px; top:64px;">
+        <img src="images/joystick-red.png" height="128px" />
+        </div>
+    </div>
+    
+    </p>
+
+</div>
+<div id="right">
+
+	<p class="soundButtons">
+		sound controls
+
+		<div id="buttonsDiv">
+
+		</div>
+
+	</p>
+</div>
+
+
+
+
+</div>
+
+  
+<script>
+// setup controls
+
+  let sounds = {
+    "grump" :	"1E011B42AA",
+    "scold" :	"1E011A528B",
+    "chitter" :	"1E011962E8",
+    "chattering" :	"1E011872C9",
+    "i love you" :	"1E01178326",
+    "bleep" :	"1E01169307",
+    "beep" :	"1E0115A364",
+    "whistle" :	"1E0114B345",
+    "descending" :	"1E0113C3A2",
+    "excited" :	"1E0112D383",
+    "cheery" :	"1E0111E3E0",
+    "sad" :	"1E0110F3C1",
+    "scream!!" :	"1E010F101F",
+    "startup" :	"1E010E003E",
+    "surprise!!" :	"1E010C207C",
+    "story" :	"1E010A40BA",
+    "wow!" :	"1E010860F8",
+    "thbt" :	"1E01068136",
+    "worried" :	"1E0104A174",
+    "dubious" :	"1E0102C1B2",
+    "startup" :	"1E0101F1D1",
+    "thinking" :	"1E0100E1F0",
+  }
+makeSoundButtons()
+
+function makeSoundButtons() {
+  let soundsDiv = document.getElementById('buttonsDiv');
+  for ([key, value] of Object.entries(sounds)) {
+    soundsDiv.innerHTML += `<button onclick="play('${value}')">${key}</button>`;
+  };
+}
+
+let turnCommand = null;
+let driveComand = null;
+let lastRan;
+let lastFunc;
+let x;
+let y;
+
+
+
+let turnValues = [
+"140201FC00AD", // left
+"140201EA725A",
+"140201E49394",
+"140201DF14AC",
+"140201D9746A",
+"140201D1F562",
+"140201CC36FE",
+"140201C697B4",
+"140201C0F772",
+"140201B918CC",
+"140201B4C961",
+"140201AE7A1A",
+"140201A7EB33",
+"140201A2BB96",
+"1402019C6C0B",
+"14020196CD41", // straight
+"14020190AD87",
+"1402018A1EFC",
+"14020184FF32",
+"1402017EB167",
+"14020178D1A1",
+"1402017270EB",
+"1402016C8314",
+"14020166225E",
+"140201604298",
+"1402015AD581",
+"14020154344F",
+"1402014F9715",
+"14020149F7D3",
+"1402014246B8",
+"1402013CD9E1",
+"1402013548C8",
+"140201002E3E", // right
+]
+
+let joystick1 = new JoystickController("stick1", 64, 8);
+
+
+function throttle (func, limit = 150) {
+	const context = this
+	const args = arguments
+	if (!lastRan) {
+		func.apply(context, args)
+		lastRan = Date.now()
+	} else {
+		// console.log(limit - (Date.now() - lastRan))
+		clearTimeout(lastFunc)
+		lastFunc = setTimeout(function() {
+			if ((Date.now() - lastRan) >= limit) {
+				func.apply(context, args)
+				lastRan = Date.now()
+			} else {
+
+			}
+		}, limit - (Date.now() - lastRan))
+	}
+  // }
+}
+
+// e-brake
+setTimeout(() => {
+	if (Date.now - lastRan > 1000) {
+		stop();
+	}
+}, 1000)
+// document.addEventListener("touchmove", preventBehavior, {passive: false});
+</script>
+
+</body></html>
